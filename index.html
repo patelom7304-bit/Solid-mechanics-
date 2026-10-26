@@ -2,588 +2,510 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Everyday Materials: Stress–Strain & Tensile Lab</title>
+  <title>3D Tensile Testing Working Model - Stress & Strain</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #11141a;
-      color: #e2e8f0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
       overflow: hidden;
-      display: flex;
-      height: 100vh;
-      width: 100vw;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #1a1a24;
+      color: #e2e8f0;
+      user-select: none;
     }
-
     #canvas-container {
-      flex: 1;
-      height: 100%;
-      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: block;
     }
-
-    /* Side Dashboard */
     #dashboard {
-      width: 440px;
-      height: 100%;
-      background: #181d26;
-      border-left: 1px solid #2d3748;
-      display: flex;
-      flex-direction: column;
-      padding: 16px;
-      gap: 12px;
-      overflow-y: auto;
-      z-index: 10;
-      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      width: 320px;
+      background: rgba(22, 27, 34, 0.92);
+      backdrop-filter: blur(10px);
+      padding: 16px 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     }
-
-    h2 { font-size: 1.15rem; color: #63b3ed; margin-bottom: 2px; }
-    h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a0aec0; margin-bottom: 4px; }
-
+    h2 {
+      margin: 0 0 12px 0;
+      font-size: 1.1rem;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
     .control-group {
-      background: #202634;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #2d3748;
+      margin-bottom: 12px;
     }
-
-    select, button {
-      width: 100%;
-      background: #2d3748;
-      color: #fff;
-      border: 1px solid #4a5568;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      outline: none;
-    }
-
-    select:focus, button:hover {
-      border-color: #63b3ed;
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    button.primary { background: #2b6cb0; border-color: #3182ce; }
-    button.primary:hover { background: #3182ce; }
-    button.secondary { background: #4a5568; }
-    button.secondary:hover { background: #718096; }
-
-    /* Canvas Graph */
-    #graph-container {
-      background: #0f1319;
-      border-radius: 6px;
-      border: 1px solid #2d3748;
-      padding: 6px;
-    }
-    canvas#plotCanvas {
-      width: 100%;
-      height: 170px;
+    label {
       display: block;
-    }
-
-    /* Live Readouts */
-    .metric-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      font-size: 0.82rem;
-    }
-    .metric-box {
-      background: #141821;
-      padding: 6px 8px;
-      border-radius: 4px;
-      border-left: 3px solid #4299e1;
-    }
-    .metric-box span {
-      display: block;
-      color: #718096;
-      font-size: 0.72rem;
-    }
-
-    /* Concept Banner */
-    #stage-indicator {
-      font-weight: 600;
-      color: #ecc94b;
-      margin-top: 2px;
       font-size: 0.85rem;
+      margin-bottom: 6px;
+      color: #94a3b8;
     }
-    .concept-desc {
-      font-size: 0.78rem;
-      color: #cbd5e0;
-      line-height: 1.35;
-      margin-top: 4px;
-    }
-
-    /* Wire Calculations */
-    .calc-box {
-      background: #1a202c;
-      border: 1px dashed #4a5568;
-      padding: 10px;
+    select, input[type=range] {
+      width: 100%;
+      background: #0f172a;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      padding: 8px;
       border-radius: 6px;
-      font-size: 0.78rem;
-      font-family: monospace;
-      color: #a0aec0;
+      outline: none;
+      box-sizing: border-box;
+      font-size: 0.9rem;
     }
-    .calc-box strong { color: #63b3ed; }
+    .metrics-panel {
+      margin-top: 14px;
+      background: #0b0f19;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      border-left: 3px solid #38bdf8;
+    }
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 4px 0;
+    }
+    .metric-val {
+      font-weight: 600;
+      font-family: monospace;
+      color: #f1f5f9;
+    }
+    #status-badge {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: #10b981;
+      color: #022c22;
+    }
+    #instruction {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.8);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      pointer-events: none;
+    }
   </style>
-  <!-- Three.js & OrbitControls via CDN -->
+  <!-- Three.js & OrbitControls from CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
-
   <div id="canvas-container"></div>
 
   <div id="dashboard">
-    <div>
-      <h2>Everyday Tensile Testing Rig</h2>
-      <p style="font-size: 0.75rem; color: #a0aec0;">Clamp & Load: Cup + Sand Weights Setup</p>
-    </div>
-
-    <!-- Material Selector -->
+    <h2>Tensile Rig Controller</h2>
+    
     <div class="control-group">
-      <h3>Select Material Specimen</h3>
-      <select id="materialSelect">
-        <option value="wire">Paper-Clip Wire (Steel - Ductile)</option>
-        <option value="rubber">Rubber Band (Elastomer - Hyperelastic)</option>
-        <option value="plastic">Plastic-Bag Strip (Polymer - Necking)</option>
-        <option value="chalk">Chalk Stick (Ceramic - Brittle)</option>
+      <label for="material-select">Select Test Material:</label>
+      <select id="material-select">
+        <option value="wire">Paper-Clip Wire (Ductile Steel)</option>
+        <option value="rubber">Rubber Band (Elastomer)</option>
+        <option value="plastic">Plastic Strip (LDPE Polymer)</option>
+        <option value="chalk">Chalk Stick (Brittle Ceramic)</option>
       </select>
-      <div class="btn-row">
-        <button id="addSandBtn" class="primary">+ Add Load (200g Cup)</button>
-        <button id="resetBtn" class="secondary">Reset</button>
+    </div>
+
+    <div class="control-group">
+      <label for="load-slider">Add Hanging Load / Sand (Force $P$): <span id="load-display">0 N</span></label>
+      <input type="range" id="load-slider" min="0" max="250" step="1" value="0">
+    </div>
+
+    <div class="metrics-panel">
+      <div class="metric-row">
+        <span>Force ($P$):</span>
+        <span class="metric-val" id="val-p">0.00 N</span>
+      </div>
+      <div class="metric-row">
+        <span>Elongation ($\Delta L$):</span>
+        <span class="metric-val" id="val-dl">0.00 mm</span>
+      </div>
+      <div class="metric-row">
+        <span>Eng. Strain ($\varepsilon$):</span>
+        <span class="metric-val" id="val-eps">0.0000</span>
+      </div>
+      <div class="metric-row">
+        <span>Eng. Stress ($\sigma$):</span>
+        <span class="metric-val" id="val-sigma">0.00 MPa</span>
+      </div>
+      <div class="metric-row">
+        <span>Young's Modulus ($E$):</span>
+        <span class="metric-val" id="val-e">--</span>
       </div>
     </div>
 
-    <!-- Behavior & Stage Readout -->
-    <div class="control-group">
-      <h3>Mechanical Response</h3>
-      <div id="stage-indicator">Elastic Region</div>
-      <div id="concept-desc" class="concept-desc">Linear stretch; will fully spring back upon unload.</div>
-    </div>
-
-    <!-- Graph -->
-    <div class="control-group">
-      <h3>Live Curve: Load vs Extension</h3>
-      <div id="graph-container">
-        <canvas id="plotCanvas" width="400" height="170"></canvas>
-      </div>
-    </div>
-
-    <!-- Live Telemetry -->
-    <div class="control-group">
-      <h3>Test Telemetry</h3>
-      <div class="metric-grid">
-        <div class="metric-box"><span>Mass Added (Load P)</span><b id="val-load">0.00 kg</b></div>
-        <div class="metric-box"><span>Extension (ΔL)</span><b id="val-ext">0.00 mm</b></div>
-        <div class="metric-box"><span>Nominal Stress (σ)</span><b id="val-stress">0.00 MPa</b></div>
-        <div class="metric-box"><span>Nominal Strain (ε)</span><b id="val-strain">0.0000</b></div>
-      </div>
-    </div>
-
-    <!-- Dedicated Wire Specimen Calculations -->
-    <div class="calc-box" id="calcSection">
-      <strong>Paper-Clip Wire Tensile Analysis:</strong><br>
-      d = 1.00 mm &rarr; A = (π/4)·d² = 0.785 mm²<br>
-      Gauge Length (L₀) = 120.0 mm<br>
-      &bull; Stress: σ = P / A<br>
-      &bull; Strain: ε = ΔL / L₀<br>
-      &bull; Young's Modulus: E = Δσ / Δε &approx; <strong>200 GPa</strong>
-    </div>
+    <div id="status-badge">State: Elastic</div>
   </div>
 
+  <div id="instruction">Left click & drag to rotate | Scroll to zoom | Right click to pan</div>
+
   <script>
-    // --- Material Characteristics & Empirical Curve Functions ---
-    const materials = {
-      wire: {
-        name: "Paper-Clip Wire",
-        type: "Ductile Metal",
-        color: 0xd1d5db,
-        initialRadius: 0.08,
-        length: 3.5, // 3D units
-        gaugeLength_mm: 120,
-        diameter_mm: 1.0,
-        area_mm2: 0.7854,
-        maxMass: 25.0, // kg
-        simulate: function(mass) {
-          const P_N = mass * 9.81;
-          const stress_MPa = P_N / this.area_mm2;
-          let strain = 0;
-          let stage = "Elastic Region";
-          let desc = "Elastic return: crystal lattice flexes reversibly. Slope = Young's Modulus E.";
-
-          const yieldStress = 220; // MPa
-          const uts = 340; // MPa
-
-          if (stress_MPa < yieldStress) {
-            strain = stress_MPa / 200000; // E = 200 GPa
-          } else if (stress_MPa < uts) {
-            stage = "Yield & Plastic Flow";
-            desc = "Dislocations glide permanently. Specimen will not return to initial length.";
-            strain = (yieldStress / 200000) + Math.pow((stress_MPa - yieldStress) / 160, 2) * 0.12;
-          } else {
-            stage = "Necking to Snap";
-            desc = "Localized cross-sectional necking occurs under high plastic strain prior to ductile shear rupture.";
-            strain = 0.18 + (mass - 22) * 0.015;
-          }
-
-          const failed = mass >= 26.0;
-          const ext_mm = strain * this.gaugeLength_mm;
-          return { mass, P_N, ext_mm, stress_MPa, strain, stage, desc, failed };
-        }
-      },
-      rubber: {
-        name: "Rubber Band",
-        type: "Elastomer",
-        color: 0xdd6b20,
-        initialRadius: 0.12,
-        length: 3.5,
-        gaugeLength_mm: 100,
-        diameter_mm: 1.8,
-        area_mm2: 2.54,
-        simulate: function(mass) {
-          const P_N = mass * 9.81;
-          const stress_MPa = P_N / this.area_mm2;
-          // Sigmoidal hyperelastic uncoiling of polymer chains
-          const strain = Math.pow(mass / 4.0, 1.45) * 0.75;
-          let stage = "Polymer Uncoiling";
-          let desc = "Entropic elasticity: polymer chains uncoil under modest force with complete elastic return.";
-
-          if (mass > 3.0) {
-            stage = "Chain Crystallization / Locking";
-            desc = "Chains align parallel, significantly stiffening the band until covalent backbone bonds snap.";
-          }
-          const failed = mass >= 5.8;
-          const ext_mm = strain * this.gaugeLength_mm;
-          return { mass, P_N, ext_mm, stress_MPa, strain, stage, desc, failed };
-        }
-      },
-      plastic: {
-        name: "Plastic-Bag Strip",
-        type: "Semicrystalline Polymer",
-        color: 0xedf2f7,
-        initialRadius: 0.15,
-        length: 3.5,
-        gaugeLength_mm: 100,
-        diameter_mm: 2.2,
-        area_mm2: 3.8,
-        simulate: function(mass) {
-          const P_N = mass * 9.81;
-          const stress_MPa = P_N / this.area_mm2;
-          let strain = 0;
-          let stage = "Linear Elastic";
-          let desc = "Reversible chain elongation.";
-
-          if (mass < 0.8) {
-            strain = mass * 0.04;
-          } else if (mass < 2.2) {
-            stage = "Yield Point & Stable Cold-Drawing Necking";
-            desc = "Visible narrow 'neck' forms and propagates along the strip at almost constant load.";
-            strain = 0.032 + (mass - 0.8) * 0.8;
-          } else {
-            stage = "Strain Hardening";
-            desc = "Highly oriented fibrils resist further draw until tensile rupture occurs.";
-            strain = 1.15 + (mass - 2.2) * 0.35;
-          }
-          const failed = mass >= 3.6;
-          const ext_mm = strain * this.gaugeLength_mm;
-          return { mass, P_N, ext_mm, stress_MPa, strain, stage, desc, failed };
-        }
-      },
-      chalk: {
-        name: "Chalk Stick",
-        type: "Brittle Ceramic / Mineral",
-        color: 0xf7fafc,
-        initialRadius: 0.28,
-        length: 3.5,
-        gaugeLength_mm: 70,
-        diameter_mm: 9.5,
-        area_mm2: 70.88,
-        simulate: function(mass) {
-          const P_N = mass * 9.81;
-          const stress_MPa = P_N / this.area_mm2;
-          const strain = stress_MPa / 8000; // Very stiff
-          const stage = "Pure Linear Elastic";
-          const desc = "Brittle behavior: zero yield, zero necking. Cleaves flat along surface microcracks with sudden snap.";
-          const failed = mass >= 3.2; // Abrupt brittle failure
-          const ext_mm = strain * this.gaugeLength_mm;
-          return { mass, P_N, ext_mm, stress_MPa, strain, stage, desc, failed };
-        }
-      }
-    };
-
-    // --- State ---
-    let currentKey = "wire";
-    let currentMass = 0;
-    let dataHistory = [];
-    let isFailed = false;
-
-    // --- Three.js Scene Setup ---
-    const container = document.getElementById("canvas-container");
+    // --- 1. Scene, Camera, Renderer ---
+    const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x131720);
+    scene.background = new THREE.Color(0x181822);
+    scene.fog = new THREE.FogExp2(0x181822, 0.04);
 
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(0, 1.8, 9.5);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(2.8, 1.2, 3.8);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
     controls.target.set(0, 0, 0);
-    controls.update();
 
-    // Illumination
+    // --- 2. Lighting ---
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
 
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-    dirLight.position.set(5, 12, 8);
+    dirLight.position.set(4, 6, 4);
     dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
     scene.add(dirLight);
 
-    const backLight = new THREE.DirectionalLight(0x63b3ed, 0.3);
-    backLight.position.set(-5, -2, -5);
+    const backLight = new THREE.DirectionalLight(0x38bdf8, 0.3);
+    backLight.position.set(-4, -2, -3);
     scene.add(backLight);
 
-    // --- Structural Rig Models ---
+    // --- 3. Material Properties & Constants ---
+    const MATERIALS = {
+      wire: {
+        name: "Paper-Clip Wire",
+        L0: 100, // mm
+        A0: 0.785, // mm^2 (d=1mm)
+        E_GPa: 190,
+        yieldStress: 140, // MPa
+        utsStress: 210, // MPa
+        fractureStrain: 0.12,
+        color: 0x94a3b8,
+        shape: 'cylinder',
+        radius: 0.015,
+        maxLoad: 175
+      },
+      rubber: {
+        name: "Rubber Band",
+        L0: 50,
+        A0: 3.6, // mm^2 (3x1.2mm)
+        E_GPa: 0.002, // 2 MPa initial
+        yieldStress: 999, // Hyperelastic, no typical yield
+        utsStress: 8.5,
+        fractureStrain: 4.5, // 450%
+        color: 0xf59e0b,
+        shape: 'strip',
+        width: 0.05,
+        thickness: 0.02,
+        maxLoad: 35
+      },
+      plastic: {
+        name: "Plastic Bag Strip",
+        L0: 60,
+        A0: 0.5, // mm^2
+        E_GPa: 0.35, // 350 MPa
+        yieldStress: 18,
+        utsStress: 26,
+        fractureStrain: 1.8, // cold drawing
+        color: 0x38bdf8,
+        shape: 'strip',
+        width: 0.06,
+        thickness: 0.008,
+        maxLoad: 14
+      },
+      chalk: {
+        name: "Chalk Stick",
+        L0: 60,
+        A0: 78.5, // mm^2 (d=10mm)
+        E_GPa: 9.5,
+        yieldStress: 2.2, // immediate brittle snap
+        utsStress: 2.2,
+        fractureStrain: 0.003,
+        color: 0xf8fafc,
+        shape: 'cylinder',
+        radius: 0.08,
+        maxLoad: 180
+      }
+    };
+
+    let curMatKey = 'wire';
+    let curMat = MATERIALS[curMatKey];
+
+    // --- 4. Rig Geometry (Table, Clamp, Scale, Weights) ---
     const rigGroup = new THREE.Group();
     scene.add(rigGroup);
 
-    // Stand base & vertical rod
-    const steelMat = new THREE.MeshStandardMaterial({ color: 0x5a6578, metalness: 0.85, roughness: 0.25 });
-    const darkSteelMat = new THREE.MeshStandardMaterial({ color: 0x242c38, roughness: 0.6 });
+    // Benchtop Wooden Surface
+    const benchGeo = new THREE.BoxGeometry(2.5, 0.15, 1.4);
+    const benchMat = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.6 });
+    const bench = new THREE.Mesh(benchGeo, benchMat);
+    bench.position.set(-0.6, 0.85, 0);
+    bench.receiveShadow = true;
+    rigGroup.add(bench);
 
-    const baseGeo = new THREE.BoxGeometry(4.5, 0.35, 3);
-    const baseMesh = new THREE.Mesh(baseGeo, darkSteelMat);
-    baseMesh.position.set(-0.8, -3.2, 0);
-    rigGroup.add(baseMesh);
+    // C-Clamp Frame
+    const clampMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 });
+    const clampBody = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.45, 0.12), clampMat);
+    clampBody.position.set(0.1, 0.95, 0);
+    rigGroup.add(clampBody);
 
-    const postGeo = new THREE.CylinderGeometry(0.12, 0.12, 7.5, 32);
-    const postMesh = new THREE.Mesh(postGeo, steelMat);
-    postMesh.position.set(-2.0, 0.4, 0);
-    rigGroup.add(postMesh);
+    const clampArmTop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.12), clampMat);
+    clampArmTop.position.set(0.2, 1.15, 0);
+    rigGroup.add(clampArmTop);
 
-    // Cantilever Clamp Arm (Top fixed clamp)
-    const armGeo = new THREE.BoxGeometry(2.6, 0.2, 0.4);
-    const armMesh = new THREE.Mesh(armGeo, steelMat);
-    armMesh.position.set(-0.7, 2.5, 0);
-    rigGroup.add(armMesh);
+    // Fixed Top Gripper
+    const gripMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.6, roughness: 0.4 });
+    const topGrip = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.14, 0.08), gripMat);
+    topGrip.position.set(0.32, 1.15, 0);
+    rigGroup.add(topGrip);
 
-    const topClampGeo = new THREE.BoxGeometry(0.5, 0.4, 0.5);
-    const clampMesh = new THREE.Mesh(topClampGeo, darkSteelMat);
-    clampMesh.position.set(0.4, 2.4, 0);
-    rigGroup.add(clampMesh);
+    // Millimeter Measuring Scale Mounted Vertically
+    const scaleBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 1.6, 0.02),
+      new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.9 })
+    );
+    scaleBoard.position.set(0.48, 0.35, 0);
+    rigGroup.add(scaleBoard);
 
-    // Specimen Assembly
-    let specimenMesh;
-    const initialY = 2.2;
-    const initialL0 = 3.2;
-
-    function buildSpecimenGeometry(radius, length) {
-      return new THREE.CylinderGeometry(radius, radius, length, 32, 24);
+    // Scale graduation lines
+    for (let i = 0; i <= 30; i++) {
+      const isMajor = i % 5 === 0;
+      const tick = new THREE.Mesh(
+        new THREE.BoxGeometry(isMajor ? 0.04 : 0.02, 0.003, 0.025),
+        new THREE.MeshBasicMaterial({ color: isMajor ? 0xd97706 : 0x0f172a })
+      );
+      tick.position.set(0.46, 1.05 - (i * 0.045), 0.005);
+      rigGroup.add(tick);
     }
 
-    const specimenMat = new THREE.MeshStandardMaterial({
-      color: materials[currentKey].color,
-      roughness: 0.4,
-      metalness: 0.4
-    });
-    specimenMesh = new THREE.Mesh(buildSpecimenGeometry(materials[currentKey].initialRadius, initialL0), specimenMat);
-    specimenMesh.position.set(0.4, initialY - initialL0 / 2, 0);
-    scene.add(specimenMesh);
+    // --- Dynamic Hanging Assembly ---
+    const hangingGroup = new THREE.Group();
+    rigGroup.add(hangingGroup);
 
-    // Lower Movable Clamp + Cup + Sand Assembly
-    const suspendedAssembly = new THREE.Group();
-    suspendedAssembly.position.set(0.4, initialY - initialL0, 0);
-    scene.add(suspendedAssembly);
+    // Lower Grip
+    const botGrip = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.08), gripMat);
+    botGrip.castShadow = true;
+    hangingGroup.add(botGrip);
 
-    const lowerClamp = new THREE.Mesh(topClampGeo, darkSteelMat);
-    lowerClamp.position.set(0, -0.15, 0);
-    suspendedAssembly.add(lowerClamp);
+    // Extension Pointer Needle
+    const pointer = new THREE.Mesh(
+      new THREE.ConeGeometry(0.02, 0.12, 8),
+      new THREE.MeshStandardMaterial({ color: 0xef4444 })
+    );
+    pointer.rotation.z = -Math.PI / 2;
+    pointer.position.set(0.08, 0, 0);
+    hangingGroup.add(pointer);
 
-    // Suspension cords
-    const stringMat = new THREE.LineBasicMaterial({ color: 0x94a3b8 });
-    const stringGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, -0.3, 0), new THREE.Vector3(-0.4, -1.0, 0),
-      new THREE.Vector3(0, -0.3, 0), new THREE.Vector3(0.4, -1.0, 0)
-    ]);
-    const cords = new THREE.LineSegments(stringGeo, stringMat);
-    suspendedAssembly.add(cords);
+    // Suspension Cord
+    const cordGeo = new THREE.CylinderGeometry(0.005, 0.005, 0.35);
+    const cord = new THREE.Mesh(cordGeo, clampMat);
+    cord.position.set(0, -0.22, 0);
+    hangingGroup.add(cord);
 
-    // Cup
-    const cupGeo = new THREE.CylinderGeometry(0.55, 0.4, 0.9, 32, 1, true);
-    const cupMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.6,
-      roughness: 0.2
-    });
-    const cupMesh = new THREE.Mesh(cupGeo, cupMat);
-    cupMesh.position.set(0, -1.45, 0);
-    suspendedAssembly.add(cupMesh);
+    // Load Bucket
+    const bucketGeo = new THREE.CylinderGeometry(0.14, 0.1, 0.28, 24);
+    const bucketMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.1, roughness: 0.2, transparent: true, opacity: 0.85 });
+    const bucket = new THREE.Mesh(bucketGeo, bucketMat);
+    bucket.position.set(0, -0.45, 0);
+    bucket.castShadow = true;
+    hangingGroup.add(bucket);
 
-    // Sand fill inside cup
-    const sandGeo = new THREE.CylinderGeometry(0.5, 0.38, 0.75, 32);
-    const sandMat = new THREE.MeshStandardMaterial({ color: 0xd69e2e, roughness: 0.9 });
-    const sandMesh = new THREE.Mesh(sandGeo, sandMat);
-    sandMesh.position.set(0, -1.5, 0);
-    sandMesh.scale.set(1, 0.05, 1);
-    suspendedAssembly.add(sandMesh);
+    // Sand/Weight Load inside bucket
+    const sandGeo = new THREE.CylinderGeometry(0.13, 0.09, 0.24, 20);
+    const sandMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 1.0 });
+    const sand = new THREE.Mesh(sandGeo, sandMat);
+    sand.position.set(0, -0.47, 0);
+    hangingGroup.add(sand);
 
-    // Broken lower fragment piece (visible on failure)
-    const brokenStubGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.4, 24);
-    const brokenStub = new THREE.Mesh(brokenStubGeo, specimenMat);
-    brokenStub.position.set(0, 0.2, 0);
-    brokenStub.visible = false;
-    suspendedAssembly.add(brokenStub);
+    // --- Dynamic Test Specimen Mesh ---
+    let specimenMesh = null;
+    const initialGripY = 1.08;
+    const initialLengthVisual = 0.55; // base 3D unit length
 
-    // --- Plotting Setup ---
-    const plotCanvas = document.getElementById("plotCanvas");
-    const pctx = plotCanvas.getContext("2d");
-
-    function drawGraph() {
-      pctx.clearRect(0, 0, plotCanvas.width, plotCanvas.height);
-      const w = plotCanvas.width;
-      const h = plotCanvas.height;
-      const padL = 44, padR = 15, padT = 15, padB = 28;
-
-      // Coordinate axes
-      pctx.strokeStyle = "#4a5568";
-      pctx.lineWidth = 1;
-      pctx.beginPath();
-      pctx.moveTo(padL, padT);
-      pctx.lineTo(padL, h - padB);
-      pctx.lineTo(w - padR, h - padB);
-      pctx.stroke();
-
-      // Axis labels
-      pctx.fillStyle = "#a0aec0";
-      pctx.font = "10px sans-serif";
-      pctx.textAlign = "center";
-      pctx.fillText("Extension ΔL (mm)", padL + (w - padL - padR) / 2, h - 8);
-
-      pctx.save();
-      pctx.translate(12, padT + (h - padT - padB) / 2);
-      pctx.rotate(-Math.PI / 2);
-      pctx.fillText("Load P (kg)", 0, 0);
-      pctx.restore();
-
-      if (dataHistory.length === 0) return;
-
-      // Determine dynamic extents
-      const maxExt = Math.max(15, ...dataHistory.map(d => d.ext_mm) * 1.15);
-      const maxLoad = Math.max(5, ...dataHistory.map(d => d.mass) * 1.2);
-
-      // Grid lines
-      pctx.strokeStyle = "#232936";
-      pctx.beginPath();
-      for (let i = 1; i <= 3; i++) {
-        const y = h - padB - (i / 4) * (h - padT - padB);
-        pctx.moveTo(padL, y);
-        pctx.lineTo(w - padR, y);
+    function rebuildSpecimenMesh() {
+      if (specimenMesh) rigGroup.remove(specimenMesh);
+      let geo;
+      if (curMat.shape === 'cylinder') {
+        geo = new THREE.CylinderGeometry(curMat.radius, curMat.radius, initialLengthVisual, 24);
+      } else {
+        geo = new THREE.BoxGeometry(curMat.width, initialLengthVisual, curMat.thickness);
       }
-      pctx.stroke();
-
-      // Plot curve
-      pctx.strokeStyle = "#38bdf8";
-      pctx.lineWidth = 2.5;
-      pctx.beginPath();
-
-      dataHistory.forEach((pt, idx) => {
-        const x = padL + (pt.ext_mm / maxExt) * (w - padL - padR);
-        const y = (h - padB) - (pt.mass / maxLoad) * (h - padT - padB);
-        if (idx === 0) pctx.moveTo(x, y);
-        else pctx.lineTo(x, y);
+      const mat = new THREE.MeshStandardMaterial({
+        color: curMat.color,
+        roughness: 0.4,
+        metalness: curMatKey === 'wire' ? 0.7 : 0.05
       });
-      pctx.stroke();
-
-      // Data markers
-      dataHistory.forEach((pt) => {
-        const x = padL + (pt.ext_mm / maxExt) * (w - padL - padR);
-        const y = (h - padB) - (pt.mass / maxLoad) * (h - padT - padB);
-        pctx.fillStyle = pt.failed ? "#f56565" : "#63b3ed";
-        pctx.beginPath();
-        pctx.arc(x, y, pt.failed ? 5 : 3, 0, Math.PI * 2);
-        pctx.fill();
-      });
+      specimenMesh = new THREE.Mesh(geo, mat);
+      specimenMesh.castShadow = true;
+      rigGroup.add(specimenMesh);
+      updateSpecimenPosition(0, 1.0);
     }
 
-    // --- Deformation Mesh Engine ---
-    function updateDeformation(strain, isNecked, failed) {
-      if (failed) {
-        // Break specimen apart
-        specimenMesh.geometry.dispose();
-        specimenMesh.geometry = new THREE.CylinderGeometry(
-          materials[currentKey].initialRadius,
-          materials[currentKey].initialRadius * 0.7,
-          initialL0 * 0.45,
-          32
-        );
-        specimenMesh.position.set(0.4, initialY - (initialL0 * 0.45) / 2, 0);
+    function updateSpecimenPosition(elongationVisual, neckScaleX) {
+      const newLen = initialLengthVisual + elongationVisual;
+      specimenMesh.scale.set(neckScaleX, newLen / initialLengthVisual, neckScaleX);
+      specimenMesh.position.set(0.32, initialGripY - (newLen / 2), 0);
+      hangingGroup.position.set(0.32, initialGripY - newLen, 0);
+    }
 
-        brokenStub.visible = true;
-        suspendedAssembly.position.y = -2.4; // dropped to rig floor
-        return;
-      }
+    rebuildSpecimenMesh();
 
-      brokenStub.visible = false;
-      const currentLen = initialL0 * (1 + strain * 0.35); // Visually scaled 3D length
-      const pos = specimenMesh.geometry.attributes.position;
-      const initialR = materials[currentKey].initialRadius;
+    // --- 5. Mechanics & Physics Engine ---
+    const loadSlider = document.getElementById('load-slider');
+    const loadDisplay = document.getElementById('load-display');
+    const valP = document.getElementById('val-p');
+    const valDL = document.getElementById('val-dl');
+    const valEps = document.getElementById('val-eps');
+    const valSigma = document.getElementById('val-sigma');
+    const valE = document.getElementById('val-e');
+    const badge = document.getElementById('status-badge');
+    const matSelect = document.getElementById('material-select');
 
-      // Rebuild cylinder with height segments to allow necking constriction
-      specimenMesh.geometry.dispose();
-      const geom = new THREE.CylinderGeometry(initialR, initialR, currentLen, 32, 32);
-      const positions = geom.attributes.position;
+    matSelect.addEventListener('change', (e) => {
+      curMatKey = e.target.value;
+      curMat = MATERIALS[curMatKey];
+      loadSlider.max = curMat.maxLoad;
+      loadSlider.value = 0;
+      rebuildSpecimenMesh();
+      evaluateMechanics(0);
+    });
 
-      // Poisson contraction & localized necking profile
-      const halfH = currentLen / 2;
-      for (let i = 0; i < positions.count; i++) {
-        const y = positions.getY(i);
-        let rScale = 1.0;
+    loadSlider.addEventListener('input', (e) => {
+      const load = parseFloat(e.target.value);
+      evaluateMechanics(load);
+    });
 
-        if (isNecked) {
-          // Parabolic neck near center
-          const distFromCenter = Math.abs(y);
-          const neckFactor = Math.exp(-Math.pow(distFromCenter / (halfH * 0.45), 2));
-          rScale = 1.0 - neckFactor * 0.55;
+    function evaluateMechanics(P_Newtons) {
+      loadDisplay.innerText = P_Newtons + " N";
+      valP.innerText = P_Newtons.toFixed(2) + " N";
+
+      // Engineering Stress: sigma = P / A0 (MPa)
+      const sigma = P_Newtons / curMat.A0;
+      valSigma.innerText = sigma.toFixed(2) + " MPa";
+
+      let strain = 0;
+      let state = "Elastic";
+      let badgeBg = "#10b981"; // green
+      let neckFactor = 1.0;
+      let isFractured = false;
+
+      // Realistic constitutive response models
+      if (curMatKey === 'wire') {
+        const yieldStress = curMat.yieldStress;
+        const uts = curMat.utsStress;
+        if (sigma <= yieldStress) {
+          strain = (sigma * 1e6) / (curMat.E_GPa * 1e9);
+          state = "Linear Elastic (Hooke's Law)";
+        } else if (sigma <= uts) {
+          strain = 0.0008 + Math.pow((sigma - yieldStress) / 80, 2.2);
+          state = "Plastic Yielding & Strain Hardening";
+          badgeBg = "#f59e0b"; // yellow
         } else {
-          // Standard Poisson volume preservation: r = r0 / sqrt(1 + ε)
-          rScale = 1.0 / Math.sqrt(1 + strain * 0.5);
+          strain = curMat.fractureStrain;
+          isFractured = true;
+          state = "Cup-and-Cone Fracture";
+          badgeBg = "#ef4444"; // red
         }
-
-        positions.setX(i, positions.getX(i) * rScale);
-        positions.setZ(i, positions.getZ(i) * rScale);
+        valE.innerText = (curMat.E_GPa).toFixed(1) + " GPa";
+      } 
+      else if (curMatKey === 'rubber') {
+        // Non-linear hyperelastic S-curve
+        strain = Math.pow(P_Newtons / 8.0, 1.4) * 0.45;
+        if (strain > curMat.fractureStrain) {
+          isFractured = true;
+          state = "Rupture (Snap)";
+          badgeBg = "#ef4444";
+        } else {
+          state = strain > 0.8 ? "Chain Alignment Stiffening" : "Reversible Hyperelastic";
+          badgeBg = "#06b6d4";
+        }
+        const tangentE = (sigma / Math.max(strain, 0.001));
+        valE.innerText = tangentE.toFixed(2) + " MPa (Tangent)";
+      } 
+      else if (curMatKey === 'plastic') {
+        if (sigma <= curMat.yieldStress) {
+          strain = (sigma * 1e6) / (curMat.E_GPa * 1e9);
+          state = "Elastic";
+        } else if (sigma <= curMat.utsStress) {
+          strain = 0.05 + (sigma - curMat.yieldStress) * 0.18;
+          neckFactor = 0.65; // cold drawing neck down
+          state = "Localized Necking & Cold Drawing";
+          badgeBg = "#8b5cf6";
+        } else {
+          isFractured = true;
+          state = "Rupture";
+          badgeBg = "#ef4444";
+        }
+        valE.innerText = (curMat.E_GPa * 1000).toFixed(0) + " MPa";
+      } 
+      else if (curMatKey === 'chalk') {
+        if (sigma < curMat.utsStress) {
+          strain = (sigma * 1e6) / (curMat.E_GPa * 1e9);
+          state = "Brittle Elastic";
+        } else {
+          strain = curMat.fractureStrain;
+          isFractured = true;
+          state = "Brittle Cleavage Snap (Zero Yield)";
+          badgeBg = "#ef4444";
+        }
+        valE.innerText = curMat.E_GPa.toFixed(1) + " GPa";
       }
-      geom.computeVertexNormals();
 
-      specimenMesh.geometry = geom;
-      specimenMesh.position.set(0.4, initialY - currentLen / 2, 0);
-      suspendedAssembly.position.set(0.4, initialY - currentLen, 0);
+      const deltaL_mm = strain * curMat.L0;
+      valDL.innerText = deltaL_mm.toFixed(2) + " mm";
+      valEps.innerText = strain.toFixed(4);
+
+      badge.innerText = "State: " + state;
+      badge.style.background = badgeBg;
+      badge.style.color = (badgeBg === "#f59e0b" || badgeBg === "#10b981") ? "#022c22" : "#ffffff";
+
+      // 3D Visual Update
+      sand.scale.set(1, Math.min(1.0, 0.15 + (P_Newtons / curMat.maxLoad) * 0.85), 1);
+
+      if (isFractured) {
+        // Snap/drop animation offset
+        specimenMesh.visible = false;
+        hangingGroup.position.y = -0.6; // falls to catch plate
+      } else {
+        specimenMesh.visible = true;
+        // Map strain to 3D visual length scale
+        const visualStretch = (deltaL_mm / curMat.L0) * initialLengthVisual;
+        updateSpecimenPosition(visualStretch, neckFactor);
+      }
     }
 
-    // --- State Handlers ---
-    function applyStep() {
-      if (isFailed) return;
+    // --- 6. Render Loop & Resize Handling ---
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 
-      const mat = materials[currentKey];
-      // Increment mass steps (chalk/plastic smaller steps, wire larger)
-      const stepSize = currentKey === "wire" ? 1.5 : (currentKey === "rubber" ? 0.35 : 0.22);
-      currentMass = +(currentMass + stepSize).toFixed(2);
-
-      const res = mat.simulate(currentMass);
-      isFailed = res.failed;
-      dataHistory.push(res);
-
-      // Update UI Telemetry
-      document.getElementById("val-load").textContent = `${res.mass.toFixed(2)} kg (${res.P_N.toFixed(1)} N)`;
-      document.getElementById("val-ext").textContent = `${res.ext_mm.toFixed(2)} mm`;
-      document.getElementById("val-stress").textContent = `$
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
