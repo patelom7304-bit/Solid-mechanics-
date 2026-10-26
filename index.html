@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Everyday Materials: Stress–Strain & Tensile Lab</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #11141a;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #canvas-container {
+      flex: 1;
+      height: 100%;
+      position: relative;
+    }
+
+    /* Side Dashboard */
+    #dashboard {
+      width: 440px;
+      height: 100%;
+      background: #181d26;
+      border-left: 1px solid #2d3748;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 12px;
+      overflow-y: auto;
+      z-index: 10;
+      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+    }
+
+    h2 { font-size: 1.15rem; color: #63b3ed; margin-bottom: 2px; }
+    h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a0aec0; margin-bottom: 4px; }
+
+    .control-group {
+      background: #202634;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #2d3748;
+    }
+
+    select, button {
+      width: 100%;
+      background: #2d3748;
+      color: #fff;
+      border: 1px solid #4a5568;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    select:focus, button:hover {
+      border-color: #63b3ed;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    button.primary { background: #2b6cb0; border-color: #3182ce; }
+    button.primary:hover { background: #3182ce; }
+    button.secondary { background: #4a5568; }
+    button.secondary:hover { background: #718096; }
+
+    /* Canvas Graph */
+    #graph-container {
+      background: #0f1319;
+      border-radius: 6px;
+      border: 1px solid #2d3748;
+      padding: 6px;
+    }
+    canvas#plotCanvas {
+      width: 100%;
+      height: 170px;
+      display: block;
+    }
+
+    /* Live Readouts */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      font-size: 0.82rem;
+    }
+    .metric-box {
+      background: #141821;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border-left: 3px solid #4299e1;
+    }
+    .metric-box span {
+      display: block;
+      color: #718096;
+      font-size: 0.72rem;
+    }
+
+    /* Concept Banner */
+    #stage-indicator {
+      font-weight: 600;
+      color: #ecc94b;
+      margin-top: 2px;
+      font-size: 0.85rem;
+    }
+    .concept-desc {
+      font-size: 0.78rem;
+      color: #cbd5e0;
+      line-height: 1.35;
+      margin-top: 4px;
+    }
+
+    /* Wire Calculations */
+    .calc-box {
+      background: #1a202c;
+      border: 1px dashed #4a5568;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-family: monospace;
+      color: #a0aec0;
+    }
+    .calc-box strong { color: #63b3ed; }
+  </style>
+  <!-- Three.js & OrbitControls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+  <div id="canvas-container"></div>
+
+  <div id="dashboard">
+    <div>
+      <h2>Everyday Tensile Testing Rig</h2>
+      <p style="font-size: 0.75rem; color: #a0aec0;">Clamp & Load: Cup + Sand Weights Setup</p>
+    </div>
+
+    <!-- Material Selector -->
+    <div class="control-group">
+      <h3>Select Material Specimen</h3>
+      <select id="materialSelect">
+        <option value="wire">Paper-Clip Wire (Steel - Ductile)</option>
+        <option value="rubber">Rubber Band (Elastomer - Hyperelastic)</option>
+        <option value="plastic">Plastic-Bag Strip (Polymer - Necking)</option>
+        <option value="chalk">Chalk Stick (Ceramic - Brittle)</option>
+      </select>
+      <div class="btn-row">
+        <button id="addSandBtn" class="primary">+ Add Load (200g Cup)</button>
+        <button id="resetBtn" class="secondary">Reset</button>
+      </div>
+    </div>
+
+    <!-- Behavior & Stage Readout -->
+    <div class="control-group">
+      <h3>Mechanical Response</h3>
+      <div id="stage-indicator">Elastic Region</div>
+      <div id="concept-desc" class="concept-desc">Linear stretch; will fully spring back upon unload.</div>
+    </div>
+
+    <!-- Graph -->
+    <div class="control-group">
+      <h3>Live Curve: Load vs Extension</h3>
+      <div id="graph-container">
+        <canvas id="plotCanvas" width="400" height="170"></canvas>
+      </div>
+    </div>
+
+    <!-- Live Telemetry -->
+    <div class="control-group">
+      <h3>Test Telemetry</h3>
+      <div class="metric-grid">
+        <div class="metric-box"><span>Mass Added (Load P)</span><b id="val-load">0.00 kg</b></div>
+        <div class="metric-box"><span>Extension (ΔL)</span><b id="val-ext">0.00 mm</b></div>
+        <div class="metric-box"><span>Nominal Stress (σ)</span><b id="val-stress">0.00 MPa</b></div>
+        <div class="metric-box"><span>Nominal Strain (ε)</span><b id="val-strain">0.0000</b></div>
+      </div>
+    </div>
+
+    <!-- Dedicated Wire Specimen Calculations -->
+    <div class="calc-box" id="calcSection">
+      <strong>Paper-Clip Wire Tensile Analysis:</strong><br>
+      d = 1.00 mm &rarr; A = (π/4)·d² = 0.785 mm²<br>
+      Gauge Length (L₀) = 120.0 mm<br>
+      &bull; Stress: σ = P / A<br>
+      &bull; Strain: ε = ΔL / L₀<br>
+      &bull; Young's Modulus: E = Δσ / Δε &approx; <strong>200 GPa</strong>
+    </div>
+  </div>
+
+  <script>
+    // --- Material Characteristics & Empirical Curve Functions ---
+    const materials = {
+      wire: {
+        name: "Paper-Clip Wire",
+        type: "Ductile Metal",
+        color: 0xd1d5db,
+        initialRadius: 0.08,
+        length: 3.5, // 3D units
+        gaugeLength_mm: 120,
+        diameter_mm: 1.0,
+        area_mm2: 0.7854,
+        maxMass: 25.0, // kg
+        simulate: function(mass) {
+          const P_N = mass * 9.81;
+          const stress_MPa = P_N / this.area_mm2;
+          let strain = 0;
+          let stage = "Elastic Region";
+          let desc = "Elastic return: crystal lattice flexes reversibly. Slope = Young's Modulus E.";
+
+          const yieldStress = 220; // MPa
+          const uts = 340; // MPa
+
+          if (stress_MPa < yieldStress) {
+            strain = stress_MPa / 200000; // E = 200 GPa
+          } else if (stress_MPa < uts) {
+            stage = "Yield & Plastic Flow";
+            desc = "Dislocations glide permanently. Specimen will not return to initial length.";
+            strain = (yieldStress / 200000) + Math.pow((stress_MPa - yieldStress) / 160, 2) * 0.12;
+          } else {
+            stage = "Necking to Snap";
+            desc = "Localized cross-sectional necking occurs under high plastic strain prior to ductile shear rupture.";
+            strain = 0.18 + (mass - 22) * 0.015;
+          }
+
+          const failed = mass >= 26.0;
+          const ext_mm = strain * this.gaugeLength_mm;
+          return { mass, P_N, ext_mm, stress_MPa, strain, stage, desc, failed };
+        }
+      },
+      rubber: {
+        name: "Rubber Band",
+        type: "Elastomer",
+        color: 0xdd6b20,
+        initialRadius: 0.12,
+        length: 3.5,
+        gaugeLength_mm: 100,
+        diameter_mm: 1.8,
+        area_mm2: 2.54,
+        simulate: function(mass) {
+          const P_N = mass * 9.81;
+          const stress_MPa = P_N / this.area_mm2;
+          // Sigmoidal hyperelastic uncoiling of polymer chains
+          const strain = Math.pow(mass / 4.0, 1.45) * 0.75;
+          let stage = "Polymer Uncoiling";
+          let desc = "Entropic elasticity: polymer chains uncoil under modest force with complete elastic return.";
+
+          if (mass > 3.0) {
+            stage = "Chain Crystallization / Locking";
+            desc = "Chains align parallel, significantly stiffening the band until covalent backbone bonds snap.";
+          }
+          const failed = mass >= 5.8;
+          const ext_mm = strain * this.gaugeLength_mm;
+          return { mass, P_N, ext_mm, stress_MPa, strain, stage, desc, failed };
+        }
+      },
+      plastic: {
+        name: "Plastic-Bag Strip",
+        type: "Semicrystalline Polymer",
+        color: 0xedf2f7,
+        initialRadius: 0.15,
+        length: 3.5,
+        gaugeLength_mm: 100,
+        diameter_mm: 2.2,
+        area_mm2: 3.8,
+        simulate: function(mass) {
+          const P_N = mass * 9.81;
+          const stress_MPa = P_N / this.area_mm2;
+          let strain = 0;
+          let stage = "Linear Elastic";
+          let desc = "Reversible chain elongation.";
+
+          if (mass < 0.8) {
+            strain = mass * 0.04;
+          } else if (mass < 2.2) {
+            stage = "Yield Point & Stable Cold-Drawing Necking";
+            desc = "Visible narrow 'neck' forms and propagates along the strip at almost constant load.";
+            strain = 0.032 + (mass - 0.8) * 0.8;
+          } else {
+            stage = "Strain Hardening";
+            desc = "Highly oriented fibrils resist further draw until tensile rupture occurs.";
+            strain = 1.15 + (mass - 2.2) * 0.35;
+          }
+          const failed = mass >= 3.6;
+          const ext_mm = strain * this.gaugeLength_mm;
+          return { mass, P_N, ext_mm, stress_MPa, strain, stage, desc, failed };
+        }
+      },
+      chalk: {
+        name: "Chalk Stick",
+        type: "Brittle Ceramic / Mineral",
+        color: 0xf7fafc,
+        initialRadius: 0.28,
+        length: 3.5,
+        gaugeLength_mm: 70,
+        diameter_mm: 9.5,
+        area_mm2: 70.88,
+        simulate: function(mass) {
+          const P_N = mass * 9.81;
+          const stress_MPa = P_N / this.area_mm2;
+          const strain = stress_MPa / 8000; // Very stiff
+          const stage = "Pure Linear Elastic";
+          const desc = "Brittle behavior: zero yield, zero necking. Cleaves flat along surface microcracks with sudden snap.";
+          const failed = mass >= 3.2; // Abrupt brittle failure
+          const ext_mm = strain * this.gaugeLength_mm;
+          return { mass, P_N, ext_mm, stress_MPa, strain, stage, desc, failed };
+        }
+      }
+    };
+
+    // --- State ---
+    let currentKey = "wire";
+    let currentMass = 0;
+    let dataHistory = [];
+    let isFailed = false;
+
+    // --- Three.js Scene Setup ---
+    const container = document.getElementById("canvas-container");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x131720);
+
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(0, 1.8, 9.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0, 0);
+    controls.update();
+
+    // Illumination
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight.position.set(5, 12, 8);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    const backLight = new THREE.DirectionalLight(0x63b3ed, 0.3);
+    backLight.position.set(-5, -2, -5);
+    scene.add(backLight);
+
+    // --- Structural Rig Models ---
+    const rigGroup = new THREE.Group();
+    scene.add(rigGroup);
+
+    // Stand base & vertical rod
+    const steelMat = new THREE.MeshStandardMaterial({ color: 0x5a6578, metalness: 0.85, roughness: 0.25 });
+    const darkSteelMat = new THREE.MeshStandardMaterial({ color: 0x242c38, roughness: 0.6 });
+
+    const baseGeo = new THREE.BoxGeometry(4.5, 0.35, 3);
+    const baseMesh = new THREE.Mesh(baseGeo, darkSteelMat);
+    baseMesh.position.set(-0.8, -3.2, 0);
+    rigGroup.add(baseMesh);
+
+    const postGeo = new THREE.CylinderGeometry(0.12, 0.12, 7.5, 32);
+    const postMesh = new THREE.Mesh(postGeo, steelMat);
+    postMesh.position.set(-2.0, 0.4, 0);
+    rigGroup.add(postMesh);
+
+    // Cantilever Clamp Arm (Top fixed clamp)
+    const armGeo = new THREE.BoxGeometry(2.6, 0.2, 0.4);
+    const armMesh = new THREE.Mesh(armGeo, steelMat);
+    armMesh.position.set(-0.7, 2.5, 0);
+    rigGroup.add(armMesh);
+
+    const topClampGeo = new THREE.BoxGeometry(0.5, 0.4, 0.5);
+    const clampMesh = new THREE.Mesh(topClampGeo, darkSteelMat);
+    clampMesh.position.set(0.4, 2.4, 0);
+    rigGroup.add(clampMesh);
+
+    // Specimen Assembly
+    let specimenMesh;
+    const initialY = 2.2;
+    const initialL0 = 3.2;
+
+    function buildSpecimenGeometry(radius, length) {
+      return new THREE.CylinderGeometry(radius, radius, length, 32, 24);
+    }
+
+    const specimenMat = new THREE.MeshStandardMaterial({
+      color: materials[currentKey].color,
+      roughness: 0.4,
+      metalness: 0.4
+    });
+    specimenMesh = new THREE.Mesh(buildSpecimenGeometry(materials[currentKey].initialRadius, initialL0), specimenMat);
+    specimenMesh.position.set(0.4, initialY - initialL0 / 2, 0);
+    scene.add(specimenMesh);
+
+    // Lower Movable Clamp + Cup + Sand Assembly
+    const suspendedAssembly = new THREE.Group();
+    suspendedAssembly.position.set(0.4, initialY - initialL0, 0);
+    scene.add(suspendedAssembly);
+
+    const lowerClamp = new THREE.Mesh(topClampGeo, darkSteelMat);
+    lowerClamp.position.set(0, -0.15, 0);
+    suspendedAssembly.add(lowerClamp);
+
+    // Suspension cords
+    const stringMat = new THREE.LineBasicMaterial({ color: 0x94a3b8 });
+    const stringGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, -0.3, 0), new THREE.Vector3(-0.4, -1.0, 0),
+      new THREE.Vector3(0, -0.3, 0), new THREE.Vector3(0.4, -1.0, 0)
+    ]);
+    const cords = new THREE.LineSegments(stringGeo, stringMat);
+    suspendedAssembly.add(cords);
+
+    // Cup
+    const cupGeo = new THREE.CylinderGeometry(0.55, 0.4, 0.9, 32, 1, true);
+    const cupMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.6,
+      roughness: 0.2
+    });
+    const cupMesh = new THREE.Mesh(cupGeo, cupMat);
+    cupMesh.position.set(0, -1.45, 0);
+    suspendedAssembly.add(cupMesh);
+
+    // Sand fill inside cup
+    const sandGeo = new THREE.CylinderGeometry(0.5, 0.38, 0.75, 32);
+    const sandMat = new THREE.MeshStandardMaterial({ color: 0xd69e2e, roughness: 0.9 });
+    const sandMesh = new THREE.Mesh(sandGeo, sandMat);
+    sandMesh.position.set(0, -1.5, 0);
+    sandMesh.scale.set(1, 0.05, 1);
+    suspendedAssembly.add(sandMesh);
+
+    // Broken lower fragment piece (visible on failure)
+    const brokenStubGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.4, 24);
+    const brokenStub = new THREE.Mesh(brokenStubGeo, specimenMat);
+    brokenStub.position.set(0, 0.2, 0);
+    brokenStub.visible = false;
+    suspendedAssembly.add(brokenStub);
+
+    // --- Plotting Setup ---
+    const plotCanvas = document.getElementById("plotCanvas");
+    const pctx = plotCanvas.getContext("2d");
+
+    function drawGraph() {
+      pctx.clearRect(0, 0, plotCanvas.width, plotCanvas.height);
+      const w = plotCanvas.width;
+      const h = plotCanvas.height;
+      const padL = 44, padR = 15, padT = 15, padB = 28;
+
+      // Coordinate axes
+      pctx.strokeStyle = "#4a5568";
+      pctx.lineWidth = 1;
+      pctx.beginPath();
+      pctx.moveTo(padL, padT);
+      pctx.lineTo(padL, h - padB);
+      pctx.lineTo(w - padR, h - padB);
+      pctx.stroke();
+
+      // Axis labels
+      pctx.fillStyle = "#a0aec0";
+      pctx.font = "10px sans-serif";
+      pctx.textAlign = "center";
+      pctx.fillText("Extension ΔL (mm)", padL + (w - padL - padR) / 2, h - 8);
+
+      pctx.save();
+      pctx.translate(12, padT + (h - padT - padB) / 2);
+      pctx.rotate(-Math.PI / 2);
+      pctx.fillText("Load P (kg)", 0, 0);
+      pctx.restore();
+
+      if (dataHistory.length === 0) return;
+
+      // Determine dynamic extents
+      const maxExt = Math.max(15, ...dataHistory.map(d => d.ext_mm) * 1.15);
+      const maxLoad = Math.max(5, ...dataHistory.map(d => d.mass) * 1.2);
+
+      // Grid lines
+      pctx.strokeStyle = "#232936";
+      pctx.beginPath();
+      for (let i = 1; i <= 3; i++) {
+        const y = h - padB - (i / 4) * (h - padT - padB);
+        pctx.moveTo(padL, y);
+        pctx.lineTo(w - padR, y);
+      }
+      pctx.stroke();
+
+      // Plot curve
+      pctx.strokeStyle = "#38bdf8";
+      pctx.lineWidth = 2.5;
+      pctx.beginPath();
+
+      dataHistory.forEach((pt, idx) => {
+        const x = padL + (pt.ext_mm / maxExt) * (w - padL - padR);
+        const y = (h - padB) - (pt.mass / maxLoad) * (h - padT - padB);
+        if (idx === 0) pctx.moveTo(x, y);
+        else pctx.lineTo(x, y);
+      });
+      pctx.stroke();
+
+      // Data markers
+      dataHistory.forEach((pt) => {
+        const x = padL + (pt.ext_mm / maxExt) * (w - padL - padR);
+        const y = (h - padB) - (pt.mass / maxLoad) * (h - padT - padB);
+        pctx.fillStyle = pt.failed ? "#f56565" : "#63b3ed";
+        pctx.beginPath();
+        pctx.arc(x, y, pt.failed ? 5 : 3, 0, Math.PI * 2);
+        pctx.fill();
+      });
+    }
+
+    // --- Deformation Mesh Engine ---
+    function updateDeformation(strain, isNecked, failed) {
+      if (failed) {
+        // Break specimen apart
+        specimenMesh.geometry.dispose();
+        specimenMesh.geometry = new THREE.CylinderGeometry(
+          materials[currentKey].initialRadius,
+          materials[currentKey].initialRadius * 0.7,
+          initialL0 * 0.45,
+          32
+        );
+        specimenMesh.position.set(0.4, initialY - (initialL0 * 0.45) / 2, 0);
+
+        brokenStub.visible = true;
+        suspendedAssembly.position.y = -2.4; // dropped to rig floor
+        return;
+      }
+
+      brokenStub.visible = false;
+      const currentLen = initialL0 * (1 + strain * 0.35); // Visually scaled 3D length
+      const pos = specimenMesh.geometry.attributes.position;
+      const initialR = materials[currentKey].initialRadius;
+
+      // Rebuild cylinder with height segments to allow necking constriction
+      specimenMesh.geometry.dispose();
+      const geom = new THREE.CylinderGeometry(initialR, initialR, currentLen, 32, 32);
+      const positions = geom.attributes.position;
+
+      // Poisson contraction & localized necking profile
+      const halfH = currentLen / 2;
+      for (let i = 0; i < positions.count; i++) {
+        const y = positions.getY(i);
+        let rScale = 1.0;
+
+        if (isNecked) {
+          // Parabolic neck near center
+          const distFromCenter = Math.abs(y);
+          const neckFactor = Math.exp(-Math.pow(distFromCenter / (halfH * 0.45), 2));
+          rScale = 1.0 - neckFactor * 0.55;
+        } else {
+          // Standard Poisson volume preservation: r = r0 / sqrt(1 + ε)
+          rScale = 1.0 / Math.sqrt(1 + strain * 0.5);
+        }
+
+        positions.setX(i, positions.getX(i) * rScale);
+        positions.setZ(i, positions.getZ(i) * rScale);
+      }
+      geom.computeVertexNormals();
+
+      specimenMesh.geometry = geom;
+      specimenMesh.position.set(0.4, initialY - currentLen / 2, 0);
+      suspendedAssembly.position.set(0.4, initialY - currentLen, 0);
+    }
+
+    // --- State Handlers ---
+    function applyStep() {
+      if (isFailed) return;
+
+      const mat = materials[currentKey];
+      // Increment mass steps (chalk/plastic smaller steps, wire larger)
+      const stepSize = currentKey === "wire" ? 1.5 : (currentKey === "rubber" ? 0.35 : 0.22);
+      currentMass = +(currentMass + stepSize).toFixed(2);
+
+      const res = mat.simulate(currentMass);
+      isFailed = res.failed;
+      dataHistory.push(res);
+
+      // Update UI Telemetry
+      document.getElementById("val-load").textContent = `${res.mass.toFixed(2)} kg (${res.P_N.toFixed(1)} N)`;
+      document.getElementById("val-ext").textContent = `${res.ext_mm.toFixed(2)} mm`;
+      document.getElementById("val-stress").textContent = `$
